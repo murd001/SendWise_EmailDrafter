@@ -3,5 +3,5 @@ it is a simple python flask web app that helps users draft, build and visualize 
 
 initialy this is how the webpage looks
 #SendWise
-<img src = "sreenshots/img1.png">
-<img src = "sreenshots/img2.png">
+<img src = "screenshots/img1.png">
+<img src = "screenshots/img2.png">
