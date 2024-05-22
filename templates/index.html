@@ -1,0 +1,292 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Send Wise</title>
+    <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Sacramento&display=swap">
+    <link rel="icon" type="image/png" href="https://i.ibb.co/qNnLQWs/emailsenderlogo.png">
+    <!-- Monaco Editor CSS -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/monaco-editor/0.23.0/min/vs/editor/editor.main.min.css">
+
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            background-color: #f13d06d7;
+            margin: 0;
+            padding: 20px;
+            box-sizing: border-box;
+            color: #333;
+        }
+
+        h1, h2 {
+            text-align: center;
+            color: #1f0f0f;
+            font-family: 'Sacramento', cursive;
+            font-size: 36px;
+            font-weight: bold;
+            margin-bottom: 20px;
+        }
+
+        form {
+            background-color: #033d334d;
+            padding: 20px;
+            border-radius: 10px;
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+            max-width: calc(100% - 160px);
+            margin: 0 auto;
+        }
+
+        label {
+            display: block;
+            margin-bottom: 10px;
+            color: #ffffff;
+            font-weight: bold;
+        }
+
+        input[type="text"],
+        input[type="password"],
+        input[type="email"],
+        input[type="smtp_password"],
+        input[type="file"] {
+            width: 100%;
+            padding: 12px;
+            margin-bottom: 20px;
+            border: 1px solid #ddd;
+            border-radius: 8px;
+            box-sizing: border-box;
+            font-size: 16px;
+            background-color: #fff;
+        }
+
+        input[type="submit"] {
+            background-color: #080808;
+            color: #fff;
+            padding: 12px 20px;
+            border: none;
+            border-radius: 8px;
+            cursor: pointer;
+            font-size: 16px;
+            transition: background-color 0.3s ease;
+        }
+
+        input[type="submit"]:hover {
+            background-color: #0e0d0c6e;
+        }
+
+        #preview {
+            margin-top: 20px;
+            padding: 15px;
+            border: 1px solid #ddd;
+            border-radius: 8px;
+            background-color: #fff;
+        }
+
+        /* Loading overlay styles */
+        #loading-overlay {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0, 0, 0, 0.5);
+            z-index: 9999;
+        }
+
+        #loading-content {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            text-align: center;
+            color: #fff;
+        }
+
+        #loading-content img {
+            max-width: 100%;
+            max-height: 100%;
+            display: block;
+            margin: 0 auto;
+        }
+
+        /* Alert message styles */
+        #alert {
+            display: none;
+            text-align: center;
+            padding: 10px;
+            margin-top: 20px;
+            border-radius: 8px;
+            background-color: #4CAF50;
+            color: #fff;
+        }
+        .monaco-editor {
+            background-color: #fff; /* Editor background color */
+            border-radius: 8px; /* Editor border radius */
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1); /* Editor box shadow */
+        }
+
+        .monaco-editor .margin,
+        .monaco-editor .minimap {
+            background-color: #f0f0f0; /* Sidebar background color */
+        }
+
+        .monaco-editor .inputarea {
+            border-top-left-radius: 8px; /* Editor input area border radius */
+            border-top-right-radius: 8px;
+        }
+
+        .monaco-editor .scroll-decoration {
+            background-color: transparent; /* Hide scroll decoration */
+        }
+
+        /* Custom Monaco Editor theme */
+        .vs-dark .monaco-editor {
+            background-color: #333; /* Dark theme background color */
+            color: #ccc; /* Dark theme text color */
+        }
+    </style>
+
+    <!-- Monaco Editor JavaScript -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/monaco-editor/0.23.0/min/vs/loader.js"></script>
+    <script>
+        function updatePreview() {
+            var subject = document.getElementById('subject').value;
+            var htmlBody = editor.getValue();
+            console.log('HTML Body:', htmlBody);
+            var previewDiv = document.getElementById('preview');
+            var previewHTML = `
+                <div>${htmlBody}</div>
+            `;
+
+            // Update the preview section with the generated HTML
+            previewDiv.innerHTML = previewHTML;
+        }
+
+        function sendEmail() {
+            // Display loading overlay
+            document.getElementById('loading-overlay').style.display = 'flex';
+            var htmlBody = editor.getValue();
+            var form = document.querySelector('form');
+            var formData = new FormData(form);
+            formData.append('html_body', htmlBody);
+
+            fetch('/', {
+                method: 'POST',
+                body: formData
+            })
+            .then(response => {
+                if (response.ok) {
+                    // Hide loading overlay
+                    document.getElementById('loading-overlay').style.display = 'none';
+
+                    // Show success alert
+                    document.getElementById('alert').textContent = 'Emails sent successfully!';
+                    document.getElementById('alert').style.display = 'block';
+                } else {
+                    // Server returned an error response
+                    throw new Error('Failed to send emails: Server error');
+                }
+            })
+            .catch(error => {
+                console.error('Error:', error);
+
+                // Hide loading overlay
+                document.getElementById('loading-overlay').style.display = 'none';
+
+                // Show error alert with specific message based on error type
+                var errorMessage = 'Failed to send emails. Please try again.';
+                if (error.message.includes('NetworkError')) {
+                    errorMessage = 'Network error. Please check your internet connection.';
+                } else if (error.message.includes('Failed to fetch')) {
+                    errorMessage = 'Failed to connect to the server. Please try again later.';
+                }
+
+                document.getElementById('alert').textContent = errorMessage;
+                document.getElementById('alert').style.display = 'block';
+            });
+
+            return false; // Prevent default form submission
+        }
+
+        function validateForm() {
+            var productKeyInput = document.getElementById('product_key');
+            var productKey = productKeyInput.value.trim();
+            if(productKey !== 'a7781'){ // You probably think adding the key here is stupid, Well it is, but i know noone loves you so they probably didnt get you shit for your birthday. So happy fucking birthday here's your present
+                alert('Invalid product key. Please enter the correct product key.');
+                return false;
+            }
+            sendEmail(); // Send email via AJAX
+            return false; // Return false to prevent default form submission
+        }
+
+        var editor;
+        // Initialize Monaco Editor on the 'html_body' div
+        require.config({ paths: { 'vs': 'https://cdnjs.cloudflare.com/ajax/libs/monaco-editor/0.23.0/min/vs' }});
+        require(['vs/editor/editor.main'], function() {
+            var htmlBodyDiv = document.getElementById('html_body');
+            editor = monaco.editor.create(htmlBodyDiv, {
+                value: '', // Initial value, if any
+                language: 'html',
+                theme: 'vs-light', // Change theme here (e.g., 'vs-light')
+                automaticLayout: true, // Adjust editor layout automatically
+                wordWrap: 'on', // Enable word wrapping
+                minimap: { enabled: false }, // Disable minimap
+                scrollbar: { vertical: 'hidden', horizontal: 'visible' }, // Show only horizontal scrollbar
+                // Custom editor styles
+                fontFamily: 'Arial, sans-serif',
+                fontSize: 14,
+                lineHeight: 20,
+                // Custom editor appearance
+                scrollBeyondLastLine: false,
+                roundedSelection: true,
+                fixedOverflowWidgets: true,
+                cursorStyle: 'line',
+                cursorBlinking: 'smooth',
+                overviewRulerBorder: false,
+            });
+
+            // Update preview when content changes in Monaco Editor
+            editor.onDidChangeModelContent(function() {
+                updatePreview(); // Call updatePreview function when content changes
+            });
+        });
+    </script>
+</head>
+<body>
+    <h1><strong>Draft Email</strong></h1>
+    <form method="POST" action="/" enctype="multipart/form-data" onsubmit="return validateForm()">
+        <label for="smtp_password">SMTP App Password:</label>
+        <input type="smtp_password" id="smtp_password" name="smtp_password" required><br>
+
+        <label for="sender_email">Your Email Address:</label>
+        <input type="email" id="sender_email" name="sender_email" required><br>
+
+        <label for="subject">Email Subject:</label>
+        <input type="text" id="subject" name="subject" required onkeyup="updatePreview()"><br>
+
+        <label for="recipients_file">Upload CSV File:</label>
+        <input type="file" id="recipients_file" name="recipients_filename" accept=".csv" required><br>
+
+        <label for="html_body">Email Body (HTML):</label>
+        <div id="html_body" style="height: 600px;"></div>
+        <br><br><br>
+        <label for="product_key">Poduct Key:</label>
+        <input type="password" id="product_key" name="product_key" required><br>
+
+        <input type="submit" value="Send Email">
+    </form>
+
+    <!-- Loading overlay -->
+    <div id="loading-overlay">
+        <div id="loading-content">
+            <p>Sending emails...</p>
+            <img src="{{ url_for('static', filename='images/loading.gif') }}" alt="Loading">
+        </div>
+    </div>
+
+    <!-- Alert message -->
+    <div id="alert"></div>
+
+    <h2><strong>Email Preview:</strong></h2>
+    <div id="preview"></div>
+</body>
+</html>
